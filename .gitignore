@@ -1,0 +1,31 @@
+# Virtual environment
+.venv/
+
+# Vector store — regenerated on first run
+chroma_store/
+
+# Environment variables — never commit secrets
+.env
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# macOS
+.DS_Store
+
+# Streamlit cache
+.streamlit/
+
+# Temp files
+*.tmp
+*.log
+
+uv.lock
+myproject.toml
+
+#Default File
+platform_concept.dcx
