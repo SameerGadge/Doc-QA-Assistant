@@ -7,6 +7,7 @@ from langchain_core.prompts import PromptTemplate
 from langchain_core.runnables import RunnablePassthrough
 from langchain_core.output_parsers import StrOutputParser
 from langchain_chroma import Chroma
+from groq import Groq
 
 from rag.embedder import get_embedding_function, CHROMA_DIR, COLLECTION_NAME
 
@@ -35,6 +36,8 @@ Question:
 
 Answer:
 """)
+
+client = Groq(api_key=api_key)
 
 
 def get_llm() -> ChatGroq:
