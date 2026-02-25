@@ -1,6 +1,7 @@
 
 import os
-from langchain_ollama import OllamaLLM
+from dotenv import load_dotenv
+from langchain_groq import ChatGroq
 from langchain_core.prompts import PromptTemplate
 from langchain_core.runnables import RunnablePassthrough
 from langchain_core.output_parsers import StrOutputParser
@@ -8,9 +9,10 @@ from langchain_chroma import Chroma
 
 from rag.embedder import get_embedding_function, CHROMA_DIR, COLLECTION_NAME
 
-LLM_MODEL = "llama3.2"
+load_dotenv()
 
-TOP_K = 5
+LLM_MODEL = "llama-3.3-70b-versatile"   # Fast, free on Groq
+TOP_K     = 5
 
 
 RAG_PROMPT = PromptTemplate.from_template("""
@@ -34,19 +36,28 @@ Answer:
 """)
 
 
-def get_llm() -> OllamaLLM:
-    return OllamaLLM(
+def get_llm() -> ChatGroq:
+
+    api_key = os.getenv("GROQ_API_KEY")
+    if not api_key:
+        raise ValueError(
+            "GROQ_API_KEY not found. "
+            "Add it to your .env file or Streamlit secrets."
+        )
+
+    return ChatGroq(
         model=LLM_MODEL,
-        base_url="http://localhost:11434",
-        temperature=0  # 0 = focused/factual, 1 = creative/varied
+        groq_api_key=api_key,
+        temperature=0   # factual, deterministic responses
     )
+
 
 
 def get_retriever(vector_store: Chroma):
 
     return vector_store.as_retriever(
-        search_type="similarity",   # cosine similarity search
-        search_kwargs={"k": TOP_K}  # return top 5 chunks
+        search_type="similarity",
+        search_kwargs={"k": TOP_K}
     )
 
 
@@ -66,14 +77,12 @@ def build_rag_chain(vector_store: Chroma):
 
     rag_chain = (
         {
-            # Left side: retrieve chunks and format them into context string
             "context": retriever | format_docs,
-            # Right side: pass the question through unchanged
             "question": RunnablePassthrough()
         }
-        | RAG_PROMPT       # inject context + question into the prompt template
-        | llm              # send filled prompt to Llama 3.2 via Ollama
-        | StrOutputParser() # parse LLM output to a plain string
+        | RAG_PROMPT
+        | llm
+        | StrOutputParser()
     )
 
     return rag_chain
@@ -102,27 +111,3 @@ def answer_with_citations(question: str, vector_store: Chroma) -> dict:
         "sources": sources,
         "chunks": chunks
     }
-
-
-if __name__ == "__main__":
-    from embedder import load_vector_store
-
-    print("Loading vector store...")
-    store = load_vector_store()
-
-    print("\nReady! Type your questions (or 'quit' to exit)\n")
-
-    while True:
-        question = input("You: ").strip()
-
-        if not question:
-            continue
-        if question.lower() in ("quit", "exit", "q"):
-            break
-
-        print("\n[Thinking...]\n")
-        result = answer_with_citations(question, store)
-
-        print(f"Answer:\n{result['answer']}")
-        print(f"\nSources: Pages {result['sources']}")
-        print("-" * 60)

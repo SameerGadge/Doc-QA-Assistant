@@ -18,16 +18,13 @@ st.set_page_config(
 
 st.markdown("""
 <style>
-    /* Main background */
     .stApp { background-color: #0f1117; }
 
-    /* Sidebar */
     [data-testid="stSidebar"] {
         background-color: #1a1d27;
         border-right: 1px solid #2e3147;
     }
 
-    /* Chat messages */
     [data-testid="stChatMessage"] {
         background-color: #1a1d27;
         border: 1px solid #2e3147;
@@ -36,7 +33,6 @@ st.markdown("""
         padding: 4px;
     }
 
-    /* Citation badge */
     .citation-badge {
         display: inline-block;
         background-color: #2e3147;
@@ -49,7 +45,6 @@ st.markdown("""
         font-family: monospace;
     }
 
-    /* Status messages */
     .status-box {
         background-color: #1a1d27;
         border: 1px solid #2e3147;
@@ -64,13 +59,13 @@ st.markdown("""
 
 
 if "messages" not in st.session_state:
-    st.session_state.messages = []          # chat history
+    st.session_state.messages = []
 
 if "vector_store" not in st.session_state:
-    st.session_state.vector_store = None    # loaded ChromaDB store
+    st.session_state.vector_store = None
 
 if "pdf_name" not in st.session_state:
-    st.session_state.pdf_name = None        # name of currently loaded PDF
+    st.session_state.pdf_name = None
 
 
 with st.sidebar:
@@ -85,21 +80,17 @@ with st.sidebar:
     )
 
     if uploaded_file:
-
         if uploaded_file.name != st.session_state.pdf_name:
 
             with st.spinner(f"Processing **{uploaded_file.name}**..."):
-
 
                 with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp:
                     tmp.write(uploaded_file.read())
                     tmp_path = tmp.name
 
                 try:
-
                     st.info("📖 Reading and chunking PDF...")
                     chunks = load_and_chunk(tmp_path)
-
 
                     if os.path.exists(CHROMA_DIR):
                         import shutil
@@ -110,7 +101,7 @@ with st.sidebar:
 
                     st.session_state.vector_store = vector_store
                     st.session_state.pdf_name = uploaded_file.name
-                    st.session_state.messages = []  # clear old chat
+                    st.session_state.messages = []
 
                     st.success(f"✅ Ready! Loaded **{len(chunks)}** chunks.")
 
@@ -118,19 +109,18 @@ with st.sidebar:
                     st.error(f"❌ Error processing PDF: {e}")
 
                 finally:
-                    os.unlink(tmp_path)  # clean up temp file
+                    os.unlink(tmp_path)
 
         else:
             st.success(f"✅ **{uploaded_file.name}** is loaded.")
 
     st.divider()
 
-
     st.markdown("**Models**")
     st.markdown("""
     <div class="status-box">
-        🤖 LLM: <code>llama3.2</code><br>
-        🔢 Embeddings: <code>nomic-embed-text</code><br>
+        🤖 LLM: <code>llama-3.2-3b</code> via Groq<br>
+        🔢 Embeddings: <code>all-MiniLM-L6-v2</code><br>
         🗄️ Vector DB: <code>ChromaDB</code> (local)
     </div>
     """, unsafe_allow_html=True)
@@ -144,17 +134,16 @@ with st.sidebar:
 
 st.markdown("## 💬 Ask Your Document")
 
-
 if not st.session_state.vector_store:
     st.markdown("""
     <div class="status-box" style="text-align:center; padding: 40px;">
         👈 Upload a PDF from the sidebar to get started.<br><br>
-        <small>Make sure <code>ollama serve</code> is running in your terminal.</small>
+        <small>Make sure <code>GROQ_API_KEY</code> is set in your <code>.env</code> file.</small>
     </div>
     """, unsafe_allow_html=True)
 
 else:
-
+    # Render chat history
     for message in st.session_state.messages:
         with st.chat_message(message["role"]):
             st.markdown(message["content"])
@@ -169,14 +158,12 @@ else:
                     unsafe_allow_html=True
                 )
 
-
+    # Chat input
     if question := st.chat_input("Ask a question about your document..."):
-
 
         st.session_state.messages.append({"role": "user", "content": question})
         with st.chat_message("user"):
             st.markdown(question)
-
 
         with st.chat_message("assistant"):
             with st.spinner("Thinking..."):
@@ -189,9 +176,7 @@ else:
                     answer = result["answer"]
                     sources = result["sources"]
 
-
                     st.markdown(answer)
-
 
                     if sources:
                         sources_html = "".join(
@@ -216,5 +201,7 @@ else:
                     })
 
                 except Exception as e:
-                    err_msg = f"❌ Error generating answer: {e}\n\nMake sure `ollama serve` is running."
-                    st.error(err_msg)
+                    st.error(
+                        f"❌ Error generating answer: {e}\n\n"
+                        "Check that your GROQ_API_KEY is set correctly in your .env file."
+                    )

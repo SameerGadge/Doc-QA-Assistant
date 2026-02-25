@@ -25,7 +25,8 @@ __pycache__/
 *.log
 
 uv.lock
-myproject.toml
+pyproject.toml
 
 #Default File
 platform_concept.dcx
+.streamlit/secrets.toml
