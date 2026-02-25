@@ -1,4 +1,5 @@
 
+import streamlit as st
 import os
 from dotenv import load_dotenv
 from langchain_groq import ChatGroq
@@ -9,7 +10,7 @@ from langchain_chroma import Chroma
 
 from rag.embedder import get_embedding_function, CHROMA_DIR, COLLECTION_NAME
 
-load_dotenv()
+#load_dotenv()
 
 LLM_MODEL = "llama-3.3-70b-versatile"   # Fast, free on Groq
 TOP_K     = 5
@@ -38,7 +39,8 @@ Answer:
 
 def get_llm() -> ChatGroq:
 
-    api_key = os.getenv("GROQ_API_KEY")
+    #api_key=os.getenv("GROQ_API_KEY")
+    api_key=st.secrets["GROQ_API_KEY"]
     if not api_key:
         raise ValueError(
             "GROQ_API_KEY not found. "
