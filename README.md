@@ -9,7 +9,7 @@ Built with **LangChain**, **Groq**, **HuggingFace**, **ChromaDB**, and **Streaml
 ![Groq](https://img.shields.io/badge/LLM-Groq-orange)
 ![Streamlit](https://img.shields.io/badge/Streamlit-1.42-red)
 
-🚀 **[Live Demo](https://your-app.streamlit.app)** ← replace with your URL
+🚀 **[Live Demo](https://doc-app-assistant-jvmhvtg7rnkdidptef6ks7.streamlit.app)** ← replace with your URL
 
 ---
 
