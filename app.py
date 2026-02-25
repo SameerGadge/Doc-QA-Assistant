@@ -94,7 +94,10 @@ with st.sidebar:
 
                     if os.path.exists(CHROMA_DIR):
                         import shutil
-                        shutil.rmtree(CHROMA_DIR)
+                        try:
+                            shutil.rmtree(CHROMA_DIR)
+                        except Exception as e:
+                            st.warning(f"Could not clear old database: {e}")
 
                     st.info("🧠 Embedding chunks into vector store...")
                     vector_store = embed_and_store(chunks)
