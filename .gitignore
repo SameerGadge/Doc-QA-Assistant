@@ -5,7 +5,7 @@
 chroma_store/
 
 # Environment variables — never commit secrets
-.env
+#.env
 
 # Python cache
 __pycache__/
