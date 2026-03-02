@@ -104,7 +104,7 @@ doc-qa-assistant/
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/yourusername/doc-qa-assistant.git
+git clone https://github.com/SameerGadge/doc-qa-assistant.git
 cd doc-qa-assistant
 ```
 
