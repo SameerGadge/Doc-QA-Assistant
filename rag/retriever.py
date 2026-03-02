@@ -32,7 +32,7 @@ Answer:
 
 
 def get_llm() -> ChatGroq:
-    api_key = st.secrets.get("GROQ_API_KEY")  # ✅ check before use
+    api_key = st.secrets["GROQ_API_KEY"]  # ✅ check before use
 
     if not api_key:
         raise ValueError(
