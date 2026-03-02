@@ -1,19 +1,12 @@
-
 import streamlit as st
-import os
-from dotenv import load_dotenv
 from langchain_groq import ChatGroq
 from langchain_core.prompts import PromptTemplate
 from langchain_core.runnables import RunnablePassthrough
 from langchain_core.output_parsers import StrOutputParser
 from langchain_chroma import Chroma
-from groq import Groq
 
-from rag.embedder import get_embedding_function, CHROMA_DIR, COLLECTION_NAME
 
-#load_dotenv()
-
-LLM_MODEL = "llama-3.3-70b-versatile"   # Fast, free on Groq
+LLM_MODEL = "llama-3.3-70b-versatile"
 TOP_K     = 5
 
 
@@ -39,26 +32,22 @@ Answer:
 
 
 def get_llm() -> ChatGroq:
+    api_key = st.secrets.get("GROQ_API_KEY")  # ✅ check before use
 
-    #api_key=os.getenv("GROQ_API_KEY")
-    api_key=st.secrets["GROQ_API_KEY"]
-    client = Groq(api_key=api_key)
     if not api_key:
         raise ValueError(
             "GROQ_API_KEY not found. "
-            "Add it to your .env file or Streamlit secrets."
+            "Add it to your Streamlit secrets."
         )
 
     return ChatGroq(
         model=LLM_MODEL,
         groq_api_key=api_key,
-        temperature=0   # factual, deterministic responses
+        temperature=0
     )
 
 
-
 def get_retriever(vector_store: Chroma):
-
     return vector_store.as_retriever(
         search_type="similarity",
         search_kwargs={"k": TOP_K}
@@ -66,7 +55,6 @@ def get_retriever(vector_store: Chroma):
 
 
 def format_docs(docs) -> str:
-
     formatted = []
     for doc in docs:
         page = doc.metadata.get("page", "?")
@@ -75,11 +63,10 @@ def format_docs(docs) -> str:
 
 
 def build_rag_chain(vector_store: Chroma):
-
     retriever = get_retriever(vector_store)
     llm = get_llm()
 
-    rag_chain = (
+    return (
         {
             "context": retriever | format_docs,
             "question": RunnablePassthrough()
@@ -89,29 +76,26 @@ def build_rag_chain(vector_store: Chroma):
         | StrOutputParser()
     )
 
-    return rag_chain
-
 
 def answer_with_citations(question: str, vector_store: Chroma) -> dict:
-
-    chain = build_rag_chain(vector_store)
-    answer = chain.invoke(question)
-
     retriever = get_retriever(vector_store)
-    source_docs = retriever.invoke(question)
 
-    seen = set()
-    sources = []
+    source_docs = retriever.invoke(question)
+    context     = format_docs(source_docs)
+
+    llm    = get_llm()
+    prompt = RAG_PROMPT.format(context=context, question=question)
+    answer = llm.invoke(prompt)
+
+    seen, sources = set(), []
     for doc in source_docs:
         page = doc.metadata.get("page", "?")
         if page not in seen:
             seen.add(page)
             sources.append(page)
 
-    chunks = [doc.page_content for doc in source_docs]
-
     return {
-        "answer": answer.strip(),
+        "answer":  answer.content.strip(),
         "sources": sources,
-        "chunks": chunks
+        "chunks":  [doc.page_content for doc in source_docs]
     }
