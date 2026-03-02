@@ -1,10 +1,9 @@
-
 import os
 import tempfile
 import streamlit as st
 
 from rag.loader import load_and_chunk
-from rag.embedder import embed_and_store, load_vector_store, CHROMA_DIR
+from rag.embedder import embed_and_store
 from rag.retriever import answer_with_citations
 
 
@@ -75,7 +74,7 @@ with st.sidebar:
 
     uploaded_file = st.file_uploader(
         "Upload a PDF",
-        type=["pdf","docx"],
+        type=["pdf", "docx"],
         help="Upload any PDF to start asking questions about it."
     )
 
@@ -92,15 +91,8 @@ with st.sidebar:
                     st.info("📖 Reading and chunking PDF...")
                     chunks = load_and_chunk(tmp_path)
 
-                    if os.path.exists(CHROMA_DIR):
-                        import shutil
-                        try:
-                            shutil.rmtree(CHROMA_DIR)
-                        except Exception as e:
-                            st.warning(f"Could not clear old database: {e}")
-
                     st.info("🧠 Embedding chunks into vector store...")
-                    vector_store = embed_and_store(chunks)
+                    vector_store = embed_and_store(chunks)  # ✅ always fresh, in-memory
 
                     st.session_state.vector_store = vector_store
                     st.session_state.pdf_name = uploaded_file.name
@@ -124,7 +116,7 @@ with st.sidebar:
     <div class="status-box">
         🤖 LLM: <code>llama-3.2-3b</code> via Groq<br>
         🔢 Embeddings: <code>all-MiniLM-L6-v2</code><br>
-        🗄️ Vector DB: <code>ChromaDB</code> (local)
+        🗄️ Vector DB: <code>ChromaDB</code> (in-memory)
     </div>
     """, unsafe_allow_html=True)
 
@@ -141,12 +133,11 @@ if not st.session_state.vector_store:
     st.markdown("""
     <div class="status-box" style="text-align:center; padding: 40px;">
         👈 Upload a PDF from the sidebar to get started.<br><br>
-        <small>Make sure <code>GROQ_API_KEY</code> is set in your <code>.env</code> file.</small>
+        <small>Make sure <code>GROQ_API_KEY</code> is set in your Streamlit secrets.</small>
     </div>
     """, unsafe_allow_html=True)
 
 else:
-    # Render chat history
     for message in st.session_state.messages:
         with st.chat_message(message["role"]):
             st.markdown(message["content"])
@@ -161,7 +152,6 @@ else:
                     unsafe_allow_html=True
                 )
 
-    # Chat input
     if question := st.chat_input("Ask a question about your document..."):
 
         st.session_state.messages.append({"role": "user", "content": question})
@@ -206,5 +196,5 @@ else:
                 except Exception as e:
                     st.error(
                         f"❌ Error generating answer: {e}\n\n"
-                        "Check that your GROQ_API_KEY is set correctly in your .env file."
+                        "Check that your GROQ_API_KEY is set in Streamlit Cloud secrets."
                     )
