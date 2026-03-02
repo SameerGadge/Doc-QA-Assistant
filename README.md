@@ -40,7 +40,7 @@ PDF Upload
 ┌─────────────────────────────────────────────┐
 │  embedder.py                                │
 │  all-MiniLM-L6-v2 converts chunks → vectors │
-│  ChromaDB stores vectors in /tmp            │
+│  ChromaDB stores vectors in-memory          │  ← updated
 └─────────────────┬───────────────────────────┘
                   │
      User asks a question
@@ -66,7 +66,7 @@ PDF Upload
 | UI | Streamlit | Fast to build, easy to demo |
 | LLM | Llama 3.3 70B via Groq | Free API, faster than local inference |
 | Embeddings | all-MiniLM-L6-v2 (HuggingFace) | Runs on CPU, no API key needed |
-| Vector DB | ChromaDB | Lightweight, no server needed |
+| Vector DB | ChromaDB (in-memory) | Lightweight, no disk writes, works anywhere |
 | PDF Parsing | PyMuPDF | Fast, accurate text extraction |
 | RAG Framework | LangChain | Industry standard |
 
@@ -85,8 +85,10 @@ doc-qa-assistant/
 │   └── retriever.py        # RAG chain — retrieval + answer generation
 │
 ├── .python-version         # Pins Python 3.11 (via uv)
+├── .streamlit/
+│   └── secrets.toml        # Local secrets — not committed
 ├── requirements.txt
-└── .env                    # Not committed — API keys
+└── .gitignore
 ```
 
 ---
@@ -116,10 +118,14 @@ uv pip install -r requirements.txt
 
 ### 3. Add your Groq API key
 
-Create a `.env` file in the project root:
+This app uses **Streamlit secrets** for API key management (both locally and in the cloud).
+
+Create `.streamlit/secrets.toml` in the project root:
+```toml
+GROQ_API_KEY = "gsk_your_key_here"
 ```
-GROQ_API_KEY=gsk_your_key_here
-```
+
+> ⚠️ Make sure `.streamlit/secrets.toml` is in your `.gitignore` — never commit API keys.
 
 Get a free key at [console.groq.com](https://console.groq.com) → API Keys.
 
@@ -183,7 +189,7 @@ LLM_MODEL   = "llama-3.3-70b-versatile"  # swap to llama-3.1-8b-instant for fast
 
 **Embeddings** — Each chunk is converted into a vector that captures its semantic meaning. Similar meanings produce similar vectors, enabling meaning-based search rather than keyword matching.
 
-**Vector Database** — ChromaDB stores chunk vectors and performs fast similarity search to find the most relevant chunks for any query.
+**Vector Database** — ChromaDB stores chunk vectors in-memory per session and performs fast similarity search to find the most relevant chunks for any query.
 
 ---
 
